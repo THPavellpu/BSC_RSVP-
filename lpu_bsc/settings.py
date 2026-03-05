@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-lpu-bsc-change-this-in-production-2024'
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['bsc-rsvp.onrender.com', 'localhost', '127.0.0.1']
 
