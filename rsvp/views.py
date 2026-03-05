@@ -5,6 +5,7 @@ from django.utils import timezone
 from .models import RSVP
 from events.models import Event
 from tickets.utils import generate_ticket
+from tickets.models import Ticket
 from notifications.utils import notify_rsvp_confirmed
 
 
@@ -36,17 +37,52 @@ def rsvp_event(request, slug):
             # Generate ticket
             try:
                 ticket = generate_ticket(request.user, event, rsvp)
-                notify_rsvp_confirmed(request.user, event, ticket)
-                messages.success(request, f'🎉 RSVP confirmed! Your ticket has been generated. Check your profile.')
+                try:
+                    notify_rsvp_confirmed(request.user, event, ticket)
+                except Exception as e:
+                    print(f"Notification error: {e}")
+                return redirect('registration_success', ticket_id=ticket.ticket_id)
             except Exception as e:
-                print(f"Ticket/notification error: {e}")
-                messages.success(request, f'🎉 RSVP confirmed! Your ticket is being processed.')
+                print(f"Ticket generation error: {e}")
+                return redirect('registration_success_rsvp', rsvp_id=rsvp.id)
         else:
-            messages.info(request, f'You have been added to the waiting list for "{event.title}".')
-
-        return redirect('event_detail', slug=slug)
+            # Waitlisted
+            return redirect('registration_success_rsvp', rsvp_id=rsvp.id)
 
     return render(request, 'rsvp/rsvp_form.html', {'event': event})
+
+
+@login_required
+def registration_success(request, ticket_id=None, rsvp_id=None):
+    """Display registration confirmation."""
+    ticket = None
+    rsvp = None
+    
+    if ticket_id:
+        try:
+            ticket = Ticket.objects.get(ticket_id=ticket_id, user=request.user)
+            rsvp = ticket.rsvp
+        except Ticket.DoesNotExist:
+            messages.error(request, 'Ticket not found.')
+            return redirect('event_list')
+    
+    if rsvp_id and not rsvp:
+        try:
+            rsvp = RSVP.objects.get(id=rsvp_id, user=request.user)
+            if rsvp.status == 'confirmed':
+                ticket = Ticket.objects.filter(user=request.user, event=rsvp.event).first()
+        except RSVP.DoesNotExist:
+            messages.error(request, 'Registration not found.')
+            return redirect('event_list')
+    
+    if not rsvp:
+        messages.error(request, 'Registration not found.')
+        return redirect('event_list')
+    
+    return render(request, 'rsvp/registration_success.html', {
+        'ticket': ticket,
+        'rsvp': rsvp,
+    })
 
 
 @login_required

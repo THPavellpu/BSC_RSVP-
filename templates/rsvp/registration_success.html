@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Registration Confirmed — LPU BSC{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <!-- SUCCESS MODAL -->
+    <div id="successModal" class="modal-overlay" style="display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050; align-items: center; justify-content: center;">
+        <div class="card" style="max-width: 500px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="card-body p-5 text-center">
+                <div style="font-size: 4rem; color: #1a472a; margin-bottom: 1rem; animation: bounce 0.6s ease-in-out;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                {% if rsvp.status == 'confirmed' %}
+                    <h2 class="fw-bold mb-2">Registration Confirmed!</h2>
+                {% else %}
+                    <h2 class="fw-bold mb-2">Added to Waitlist</h2>
+                {% endif %}
+                <p class="text-muted mb-4">{{ rsvp.event.title }}</p>
+                
+                <div class="alert alert-light border" style="text-align: left; margin-bottom: 2rem;">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="small text-muted">Attendee Name</div>
+                            <div class="fw-bold">{{ rsvp.user.full_name }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Event Date</div>
+                            <div class="fw-bold">{{ rsvp.event.event_date|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Time</div>
+                            <div class="fw-bold">{{ rsvp.event.event_date|date:"g:i A" }}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted">Venue</div>
+                            <div class="fw-bold">{{ rsvp.event.venue }}</div>
+                        </div>
+                        {% if ticket %}
+                        <div class="col-12">
+                            <div class="small text-muted">Ticket ID</div>
+                            <div class="fw-bold font-monospace">{{ ticket.ticket_id }}</div>
+                        </div>
+                        {% endif %}
+                        <div class="col-12">
+                            <div class="small text-muted">Status</div>
+                            {% if rsvp.status == 'confirmed' %}
+                            <span class="badge bg-success">✓ Confirmed</span>
+                            {% else %}
+                            <span class="badge bg-warning">⏱ Waitlisted</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if rsvp.status == 'confirmed' and ticket and ticket.qr_code %}
+                <div class="mb-4 p-3 rounded-xl" style="background: #f8f9fa;">
+                    <img src="{{ ticket.qr_code.url }}" alt="QR Code" style="max-width: 150px; margin: 0 auto; display: block;">
+                    <div class="small text-muted mt-2">Show this QR code at entry</div>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                    {% if rsvp.status == 'confirmed' and ticket %}
+                    <a href="{% url 'ticket_detail' ticket.ticket_id %}" class="btn btn-gold fw-bold">
+                        <i class="bi bi-ticket me-2"></i>View Your Ticket
+                    </a>
+                    {% else %}
+                    <a href="{% url 'my_tickets' %}" class="btn btn-gold fw-bold">
+                        <i class="bi bi-ticket me-2"></i>My Tickets
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'event_detail' rsvp.event.slug %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Event
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes bounce {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .modal-overlay {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+</style>
+{% endblock %}
