@@ -18,7 +18,12 @@ def notify_rsvp_confirmed(user, event, ticket=None):
     title = f"RSVP Confirmed: {event.title}"
     message = f"Your registration for {event.title} on {event.event_date.strftime('%B %d, %Y')} has been confirmed!"
     link = f"/tickets/"
-    notification = create_notification(user, 'rsvp_confirmed', title, message, link)
+    
+    notification = None
+    try:
+        notification = create_notification(user, 'rsvp_confirmed', title, message, link)
+    except Exception as e:
+        print(f"Notification creation error: {e}")
 
     # Send email
     try:
@@ -29,8 +34,8 @@ def notify_rsvp_confirmed(user, event, ticket=None):
             recipient_list=[user.email],
             fail_silently=True,
         )
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Email sending error: {e}")
 
     return notification
 

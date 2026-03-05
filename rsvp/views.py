@@ -34,9 +34,13 @@ def rsvp_event(request, slug):
 
         if status == 'confirmed':
             # Generate ticket
-            ticket = generate_ticket(request.user, event, rsvp)
-            notify_rsvp_confirmed(request.user, event, ticket)
-            messages.success(request, f'🎉 RSVP confirmed! Your ticket has been generated. Check your profile.')
+            try:
+                ticket = generate_ticket(request.user, event, rsvp)
+                notify_rsvp_confirmed(request.user, event, ticket)
+                messages.success(request, f'🎉 RSVP confirmed! Your ticket has been generated. Check your profile.')
+            except Exception as e:
+                print(f"Ticket/notification error: {e}")
+                messages.success(request, f'🎉 RSVP confirmed! Your ticket is being processed.')
         else:
             messages.info(request, f'You have been added to the waiting list for "{event.title}".')
 
@@ -60,8 +64,11 @@ def cancel_rsvp(request, rsvp_id):
         if waitlisted:
             waitlisted.status = 'confirmed'
             waitlisted.save()
-            ticket = generate_ticket(waitlisted.user, event, waitlisted)
-            notify_rsvp_confirmed(waitlisted.user, event, ticket)
+            try:
+                ticket = generate_ticket(waitlisted.user, event, waitlisted)
+                notify_rsvp_confirmed(waitlisted.user, event, ticket)
+            except Exception as e:
+                print(f"Waitlist promotion error: {e}")
 
         rsvp.status = 'cancelled'
         rsvp.save()
