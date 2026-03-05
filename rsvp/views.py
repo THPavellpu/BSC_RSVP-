@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from django.db import transaction
 
 from .models import RSVP
 from events.models import Event
@@ -14,7 +15,7 @@ from notifications.utils import notify_rsvp_confirmed
 def rsvp_event(request, slug):
     event = get_object_or_404(Event, slug=slug)
 
-    # Check RSVP availability
+    # Check if RSVP is open
     if not event.is_rsvp_open:
         messages.error(request, 'RSVP is closed for this event.')
         return redirect('event_detail', slug=slug)
@@ -29,41 +30,44 @@ def rsvp_event(request, slug):
         return redirect('event_detail', slug=slug)
 
     if request.method == 'POST':
+
         additional_info = request.POST.get('additional_info', '')
 
-        # Determine RSVP status
-        status = 'confirmed' if not event.is_full else 'waitlisted'
+        with transaction.atomic():
 
-        # Create RSVP
-        rsvp = RSVP.objects.create(
-            user=request.user,
-            event=event,
-            status=status,
-            additional_info=additional_info,
-        )
+            # Determine RSVP status
+            status = 'confirmed' if not event.is_full else 'waitlisted'
 
-        # Ensure DB save completed
-        rsvp.refresh_from_db()
+            # Create RSVP
+            rsvp = RSVP.objects.create(
+                user=request.user,
+                event=event,
+                status=status,
+                additional_info=additional_info,
+            )
 
-        # If confirmed → generate ticket
-        if status == 'confirmed':
-            try:
-                ticket = generate_ticket(request.user, event, rsvp)
+            rsvp.refresh_from_db()
 
-                # Send notification
+            # If confirmed → generate ticket
+            if status == 'confirmed':
                 try:
-                    notify_rsvp_confirmed(request.user, event, ticket)
+                    ticket = generate_ticket(request.user, event, rsvp)
+
+                    # Send notification
+                    try:
+                        notify_rsvp_confirmed(request.user, event, ticket)
+                    except Exception as e:
+                        print(f"Notification error: {e}")
+
+                    # Redirect to success page with ticket
+                    return redirect('registration_success', ticket_id=str(ticket.ticket_id))
+
                 except Exception as e:
-                    print(f"Notification error: {e}")
+                    print(f"Ticket generation error: {e}")
+                    return redirect('registration_success_rsvp', rsvp_id=int(rsvp.id))
 
-                return redirect('registration_success', ticket_id=ticket.ticket_id)
-
-            except Exception as e:
-                print(f"Ticket generation error: {e}")
-                return redirect('registration_success_rsvp', rsvp_id=rsvp.id)
-
-        # If waitlisted
-        return redirect('registration_success_rsvp', rsvp_id=rsvp.id)
+            # If waitlisted
+            return redirect('registration_success_rsvp', rsvp_id=int(rsvp.id))
 
     return render(request, 'rsvp/rsvp_form.html', {'event': event})
 
@@ -75,17 +79,20 @@ def registration_success(request, ticket_id=None, rsvp_id=None):
     ticket = None
     rsvp = None
 
-    # Case 1: Ticket exists
+    # If ticket exists
     if ticket_id:
         ticket = get_object_or_404(Ticket, ticket_id=ticket_id, user=request.user)
         rsvp = ticket.rsvp
 
-    # Case 2: RSVP exists but maybe waitlisted
+    # If RSVP exists but maybe waitlisted
     if rsvp_id and not rsvp:
         rsvp = get_object_or_404(RSVP, id=rsvp_id, user=request.user)
 
         if rsvp.status == 'confirmed':
-            ticket = Ticket.objects.filter(user=request.user, event=rsvp.event).first()
+            ticket = Ticket.objects.filter(
+                user=request.user,
+                event=rsvp.event
+            ).first()
 
     if not rsvp:
         messages.error(request, 'Registration not found.')
@@ -99,15 +106,19 @@ def registration_success(request, ticket_id=None, rsvp_id=None):
 
 @login_required
 def cancel_rsvp(request, rsvp_id):
+
     rsvp = get_object_or_404(RSVP, id=rsvp_id, user=request.user)
     event = rsvp.event
 
     if request.method == 'POST':
 
         # Cancel ticket
-        Ticket.objects.filter(user=request.user, event=event).update(status='cancelled')
+        Ticket.objects.filter(
+            user=request.user,
+            event=event
+        ).update(status='cancelled')
 
-        # Promote waitlisted attendee
+        # Promote first waitlisted attendee
         waitlisted = RSVP.objects.filter(
             event=event,
             status='waitlisted'
