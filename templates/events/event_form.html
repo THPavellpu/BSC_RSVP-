@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ action }} Event — LPU BSC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-calendar-plus me-3"></i>{{ action }} Event</h1>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card shadow-card">
+                <div class="card-body p-4 p-lg-5">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Event Title *</label>
+                                {{ form.title }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category *</label>
+                                {{ form.category }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Description *</label>
+                                {{ form.description }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Event Banner / Poster</label>
+                                {{ form.banner }}
+                                {% if event and event.banner %}
+                                <div class="mt-2">
+                                    <img src="{{ event.banner.url }}" class="img-fluid rounded-xl" style="max-height:150px;" alt="Current banner">
+                                    <p class="small text-muted mt-1">Current banner. Upload new to replace.</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Event Date & Time *</label>
+                                {{ form.event_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">End Date & Time</label>
+                                {{ form.end_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Venue / Location *</label>
+                                {{ form.venue }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Maximum Attendees *</label>
+                                {{ form.max_attendees }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Venue Details</label>
+                                {{ form.venue_details }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">RSVP Deadline *</label>
+                                {{ form.rsvp_deadline }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ticket Price (₹)</label>
+                                {{ form.ticket_price }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Tags (comma-separated)</label>
+                                {{ form.tags }}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.is_free }}
+                                    <label class="form-check-label" for="{{ form.is_free.id_for_label }}">This is a free event</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    {{ form.is_featured }}
+                                    <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">Feature this event on homepage</label>
+                                </div>
+                            </div>
+                            {% if form.errors %}
+                            <div class="col-12">
+                                <div class="alert alert-danger">
+                                    {% for field, errors in form.errors.items %}
+                                        {% for error in errors %}
+                                        <div>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="col-12 d-flex gap-3 justify-content-end">
+                                <a href="{% url 'event_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-gold px-5">
+                                    <i class="bi bi-check2 me-2"></i>{{ action }} Event
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

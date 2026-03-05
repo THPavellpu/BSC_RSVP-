@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Add Gallery Photo{% endblock %}
+{% block content %}
+<div class="page-header"><div class="container"><h1><i class="bi bi-images me-3"></i>Add Gallery Photo</h1><p class="opacity-75 mb-0">{{ event.title }}</p></div></div>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-card">
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3"><label class="form-label">Photo *</label>{{ form.image }}</div>
+                        <div class="mb-4"><label class="form-label">Caption</label>{{ form.caption }}</div>
+                        <div class="d-flex gap-3">
+                            <a href="{% url 'event_detail' event.slug %}" class="btn btn-outline-secondary flex-fill">Cancel</a>
+                            <button type="submit" class="btn btn-gold flex-fill"><i class="bi bi-upload me-2"></i>Upload Photo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

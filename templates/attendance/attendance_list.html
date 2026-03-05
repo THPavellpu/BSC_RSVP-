@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Attendance — {{ event.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-person-check me-3"></i>Attendance List</h1>
+        <p class="opacity-75 mb-0">{{ event.title }} · {{ total }} attendees checked in</p>
+    </div>
+</div>
+<div class="container py-4">
+    <div class="d-flex justify-content-between mb-4">
+        <div class="d-flex gap-3">
+            <a href="{% url 'scan_qr' event.slug %}" class="btn btn-gold">
+                <i class="bi bi-qr-code-scan me-2"></i>Scan QR
+            </a>
+            <a href="{% url 'event_attendees' event.slug %}" class="btn btn-outline-green">
+                <i class="bi bi-people me-2"></i>All Registrants
+            </a>
+        </div>
+        <div class="stat-card py-2 px-4" style="background:white;">
+            <span class="fw-bold text-green fs-4">{{ total }}</span> <span class="text-muted">/ {{ event.confirmed_count }}</span> checked in
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><i class="bi bi-list-check me-2"></i>Check-in Log</div>
+        <div class="card-body p-0">
+            {% if attendances %}
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Time</th><th>Checked in by</th></tr></thead>
+                    <tbody>
+                        {% for att in attendances %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td class="fw-bold">{{ att.user.full_name }}</td>
+                            <td class="small text-muted">{{ att.user.email }}</td>
+                            <td class="small">{{ att.checked_in_at|date:"g:i A" }}</td>
+                            <td class="small text-muted">{{ att.checked_in_by.full_name|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state py-5"><i class="bi bi-person-x d-block mb-3"></i><p>No check-ins yet</p></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

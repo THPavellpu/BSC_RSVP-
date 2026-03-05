@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Log In — LPU BSC{% endblock %}
+
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;background:linear-gradient(135deg,var(--green-dark),var(--green-mid));">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="text-center mb-4">
+                    <i class="bi bi-mortarboard-fill text-gold" style="font-size:3rem;"></i>
+                    <h2 style="font-family:'Playfair Display',serif;color:white;font-weight:900;">Welcome Back</h2>
+                    <p class="opacity-75 text-white">LPU Bangladesh Students Community</p>
+                </div>
+                <div class="card shadow-lg">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-4">Log In to Your Account</h5>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                {{ form.username }}
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Password</label>
+                                {{ form.password }}
+                            </div>
+                            {% if form.errors %}
+                            <div class="alert alert-danger py-2 small">Invalid email or password.</div>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Log In
+                            </button>
+                        </form>
+                        <hr class="my-3">
+                        <p class="text-center small mb-0">Don't have an account? <a href="{% url 'register' %}" class="text-green fw-bold">Join Us</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}My Profile — LPU BSC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="d-flex align-items-center gap-4">
+            {% if user.profile_picture %}
+            <img src="{{ user.profile_picture.url }}" class="avatar" style="width:80px;height:80px;border:3px solid var(--gold);" alt="">
+            {% else %}
+            <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:white;border:3px solid var(--gold);">
+                {{ user.full_name|first }}
+            </div>
+            {% endif %}
+            <div>
+                <h1 style="font-family:'Playfair Display',serif;">{{ user.full_name }}</h1>
+                <p class="opacity-75 mb-0">{{ user.email }} · {{ user.get_role_display }}</p>
+                {% if user.registration_number %}<p class="small opacity-60 mb-0">Reg: {{ user.registration_number }}</p>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-person me-2"></i>Profile Info</div>
+                <div class="card-body p-4">
+                    <table class="table table-borderless mb-0">
+                        <tr><td class="text-muted small">Name</td><td class="fw-bold small">{{ user.full_name }}</td></tr>
+                        <tr><td class="text-muted small">Email</td><td class="fw-bold small">{{ user.email }}</td></tr>
+                        {% if user.phone_number %}<tr><td class="text-muted small">Phone</td><td class="small">{{ user.phone_number }}</td></tr>{% endif %}
+                        {% if user.department %}<tr><td class="text-muted small">Dept</td><td class="small">{{ user.department }}</td></tr>{% endif %}
+                        {% if user.batch_year %}<tr><td class="text-muted small">Batch</td><td class="small">{{ user.batch_year }}</td></tr>{% endif %}
+                        <tr><td class="text-muted small">Member since</td><td class="small">{{ user.created_at|date:"M Y" }}</td></tr>
+                    </table>
+                    {% if user.bio %}<p class="small text-muted mt-3 border-top pt-3">{{ user.bio }}</p>{% endif %}
+                    <a href="{% url 'edit_profile' %}" class="btn btn-outline-green w-100 mt-3">
+                        <i class="bi bi-pencil me-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-number">{{ rsvps.count }}</div>
+                        <div class="stat-label">Events Joined</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="stat-card gold-accent text-center">
+                        <div class="stat-number">{{ tickets.count }}</div>
+                        <div class="stat-label">Tickets</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <!-- REGISTERED EVENTS -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar-check me-2"></i>My Registrations</span>
+                    <span class="badge bg-gold text-dark">{{ rsvps.count }}</span>
+                </div>
+                <div class="card-body p-0">
+                    {% if rsvps %}
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead><tr><th>Event</th><th>Date</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {% for rsvp in rsvps %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'event_detail' rsvp.event.slug %}" class="text-dark fw-bold text-decoration-none">{{ rsvp.event.title|truncatechars:40 }}</a>
+                                    </td>
+                                    <td class="small text-muted">{{ rsvp.event.event_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        <span class="badge badge-status-{% if rsvp.status == 'confirmed' %}upcoming{% elif rsvp.status == 'waitlisted' %}ongoing{% else %}cancelled{% endif %}">
+                                            {{ rsvp.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if rsvp.status == 'confirmed' %}
+                                        <a href="{% url 'my_tickets' %}" class="btn btn-sm btn-outline-green">
+                                            <i class="bi bi-ticket me-1"></i>Ticket
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-4">
+                        <i class="bi bi-calendar-x d-block mb-2"></i>
+                        <p class="mb-2">No registrations yet</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary btn-sm">Browse Events</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- MY TICKETS -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-ticket me-2"></i>My Tickets</span>
+                    <a href="{% url 'my_tickets' %}" class="btn btn-sm btn-gold">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if tickets %}
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead><tr><th>Event</th><th>Ticket ID</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                <tr>
+                                    <td class="fw-bold small">{{ ticket.event.title|truncatechars:35 }}</td>
+                                    <td class="font-monospace small text-muted">{{ ticket.ticket_number }}</td>
+                                    <td><span class="badge badge-status-{% if ticket.status == 'active' %}upcoming{% elif ticket.status == 'used' %}ongoing{% else %}cancelled{% endif %}">{{ ticket.get_status_display }}</span></td>
+                                    <td>
+                                        <a href="{% url 'ticket_detail' ticket.ticket_id %}" class="btn btn-sm btn-outline-green">View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-4"><p class="mb-0">No tickets yet</p></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+<div class="event-card">
+    {% if event.banner %}
+    <img src="{{ event.banner.url }}" class="event-banner" alt="{{ event.title }}">
+    {% else %}
+    <div class="event-banner-placeholder">
+        {% if event.category == 'cultural' %}<i class="bi bi-music-note-beamed"></i>
+        {% elif event.category == 'sports' %}<i class="bi bi-trophy"></i>
+        {% elif event.category == 'seminar' %}<i class="bi bi-mic"></i>
+        {% elif event.category == 'meetup' %}<i class="bi bi-people"></i>
+        {% elif event.category == 'workshop' %}<i class="bi bi-tools"></i>
+        {% else %}<i class="bi bi-calendar-event"></i>{% endif %}
+    </div>
+    {% endif %}
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge badge-category">{{ event.get_category_display }}</span>
+            <span class="badge badge-status-{{ event.status }}">{{ event.get_status_display }}</span>
+        </div>
+        <h5 class="event-title mb-2">{{ event.title|truncatechars:60 }}</h5>
+        <div class="d-flex align-items-center gap-2 text-muted small mb-1">
+            <i class="bi bi-calendar3"></i>
+            <span>{{ event.event_date|date:"M d, Y" }} at {{ event.event_date|date:"g:i A" }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2 text-muted small mb-3">
+            <i class="bi bi-geo-alt"></i>
+            <span>{{ event.venue|truncatechars:40 }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="small">
+                <i class="bi bi-people text-green me-1"></i>
+                <span class="text-green fw-bold">{{ event.confirmed_count }}</span>
+                <span class="text-muted">/ {{ event.max_attendees }}</span>
+            </div>
+            {% if event.is_free %}
+            <span class="badge" style="background:#d4edda;color:#155724;">Free</span>
+            {% else %}
+            <span class="badge" style="background:#fff3cd;color:#856404;">₹{{ event.ticket_price }}</span>
+            {% endif %}
+        </div>
+        {% if event.max_attendees > 0 %}
+        <div class="progress mb-3" style="height:5px;">
+            <div class="progress-bar" style="width:{% widthratio event.confirmed_count event.max_attendees 100 %}%"></div>
+        </div>
+        {% endif %}
+        <a href="{% url 'event_detail' event.slug %}" class="btn btn-primary w-100 btn-sm">
+            View Details <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+</div>

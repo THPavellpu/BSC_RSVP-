@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — LPU BSC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-speedometer2 me-3"></i>My Dashboard</h1>
+        <p class="opacity-75 mb-0">Welcome back, {{ user.full_name }}!</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- STATS -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number">{{ rsvps.count }}</div>
+                        <div class="stat-label">Events Registered</div>
+                    </div>
+                    <i class="bi bi-calendar-check stat-icon"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card gold-accent">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number">{{ tickets.count }}</div>
+                        <div class="stat-label">Tickets Generated</div>
+                    </div>
+                    <i class="bi bi-ticket stat-icon" style="color:var(--gold)"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card" style="border-left-color:#0d6efd;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="stat-number">{{ total_events_attended }}</div>
+                        <div class="stat-label">Events Attended</div>
+                    </div>
+                    <i class="bi bi-check-circle stat-icon" style="color:#0d6efd;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- UPCOMING EVENTS -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-calendar3 me-2"></i>Upcoming Events</span>
+                    <a href="{% url 'event_list' %}" class="btn btn-sm btn-gold">View All</a>
+                </div>
+                <div class="card-body p-4">
+                    {% if upcoming_events %}
+                    <div class="row g-3">
+                        {% for event in upcoming_events %}
+                        <div class="col-md-6">{% include 'events/event_card.html' %}</div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-3">
+                        <p class="mb-2">No upcoming events</p>
+                        <a href="{% url 'event_list' %}" class="btn btn-primary btn-sm">Browse All Events</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- QUICK ACTIONS -->
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-lightning me-2"></i>Quick Actions</div>
+                <div class="card-body p-4">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'event_list' %}" class="btn btn-outline-green">
+                            <i class="bi bi-search me-2"></i>Find Events
+                        </a>
+                        <a href="{% url 'my_tickets' %}" class="btn btn-outline-green">
+                            <i class="bi bi-ticket me-2"></i>My Tickets
+                        </a>
+                        <a href="{% url 'profile' %}" class="btn btn-outline-green">
+                            <i class="bi bi-person me-2"></i>Edit Profile
+                        </a>
+                        <a href="{% url 'notification_list' %}" class="btn btn-outline-green">
+                            <i class="bi bi-bell me-2"></i>Notifications
+                            {% if unread_notification_count > 0 %}
+                            <span class="badge bg-danger ms-1">{{ unread_notification_count }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RECENT NOTIFICATIONS -->
+            <div class="card">
+                <div class="card-header"><i class="bi bi-bell me-2"></i>Recent Notifications</div>
+                <div class="card-body p-0">
+                    {% if notifications %}
+                    <div class="list-group list-group-flush">
+                        {% for notif in notifications %}
+                        <a href="{% url 'notification_list' %}" class="list-group-item list-group-item-action py-3 px-4 {% if not notif.is_read %}bg-light{% endif %}">
+                            <div class="fw-bold small">{{ notif.title|truncatechars:50 }}</div>
+                            <div class="text-muted small">{{ notif.created_at|timesince }} ago</div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-3">
+                        <i class="bi bi-bell-slash d-block mb-1"></i>
+                        <p class="mb-0 small">No new notifications</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

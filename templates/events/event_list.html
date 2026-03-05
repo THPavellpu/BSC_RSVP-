@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Events — LPU BSC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-calendar3 me-3"></i>All Events</h1>
+        <p class="opacity-75 mb-0">Browse and register for upcoming events</p>
+    </div>
+</div>
+
+<div class="container py-4">
+    <!-- SEARCH & FILTERS -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-lg-4 col-md-6">
+                    <label class="form-label"><i class="bi bi-search me-1"></i>Search</label>
+                    {{ form.q }}
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label">Status</label>
+                    {{ form.status }}
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <label class="form-label">Sort By</label>
+                    {{ form.sort }}
+                </div>
+                <div class="col-lg-2 col-md-3 col-6">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-filter me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if events %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">Showing {{ events.paginator.count }} events</p>
+        {% if user.is_organizer %}
+        <a href="{% url 'create_event' %}" class="btn btn-gold">
+            <i class="bi bi-plus-lg me-1"></i>Create Event
+        </a>
+        {% endif %}
+    </div>
+    <div class="row g-4">
+        {% for event in events %}
+        <div class="col-lg-4 col-md-6 animate-in" style="animation-delay:{{ forloop.counter0 }}0ms">
+            {% include 'events/event_card.html' %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- PAGINATION -->
+    {% if events.has_other_pages %}
+    <nav class="mt-5 d-flex justify-content-center">
+        <ul class="pagination gap-2">
+            {% if events.has_previous %}
+            <li class="page-item">
+                <a class="page-link rounded-xl border-0 shadow-sm" href="?page={{ events.previous_page_number }}&{{ request.GET.urlencode }}">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            {% for num in events.paginator.page_range %}
+            <li class="page-item {% if events.number == num %}active{% endif %}">
+                <a class="page-link rounded-xl border-0 shadow-sm {% if events.number == num %}bg-green{% endif %}" href="?page={{ num }}&{{ request.GET.urlencode }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            {% if events.has_next %}
+            <li class="page-item">
+                <a class="page-link rounded-xl border-0 shadow-sm" href="?page={{ events.next_page_number }}&{{ request.GET.urlencode }}">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="empty-state py-5">
+        <i class="bi bi-calendar-x d-block mb-3"></i>
+        <h4>No events found</h4>
+        <p>Try adjusting your search filters</p>
+        <a href="{% url 'event_list' %}" class="btn btn-outline-green mt-2">Clear Filters</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

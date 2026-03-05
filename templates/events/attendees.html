@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Attendees — {{ event.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container"><h1><i class="bi bi-people me-3"></i>Attendees</h1><p class="opacity-75 mb-0">{{ event.title }}</p></div>
+</div>
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="stat-card mb-3"><div class="stat-number">{{ confirmed_rsvps.count }}</div><div class="stat-label">Confirmed</div></div>
+            <div class="stat-card gold-accent mb-3"><div class="stat-number">{{ waitlisted_rsvps.count }}</div><div class="stat-label">Waitlisted</div></div>
+            <div class="stat-card mb-3" style="border-left-color:#198754;"><div class="stat-number">{{ checked_in.count }}</div><div class="stat-label">Checked In</div></div>
+            <a href="{% url 'scan_qr' event.slug %}" class="btn btn-gold w-100 mb-2"><i class="bi bi-qr-code-scan me-2"></i>Start Check-in</a>
+            <a href="{% url 'attendance_list' event.slug %}" class="btn btn-outline-green w-100">Attendance Log</a>
+        </div>
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-check-circle me-2"></i>Confirmed ({{ confirmed_rsvps.count }})</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead><tr><th>Name</th><th>Email</th><th>Reg No.</th><th>Registered</th></tr></thead>
+                            <tbody>
+                                {% for rsvp in confirmed_rsvps %}
+                                <tr>
+                                    <td class="fw-bold">{{ rsvp.user.full_name }}</td>
+                                    <td class="small text-muted">{{ rsvp.user.email }}</td>
+                                    <td class="small text-muted">{{ rsvp.user.registration_number|default:"—" }}</td>
+                                    <td class="small text-muted">{{ rsvp.created_at|date:"M d" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted py-3">No confirmed registrations yet</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% if waitlisted_rsvps %}
+            <div class="card">
+                <div class="card-header"><i class="bi bi-list-ul me-2"></i>Waitlist ({{ waitlisted_rsvps.count }})</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead><tr><th>Name</th><th>Email</th><th>Position</th></tr></thead>
+                            <tbody>
+                                {% for rsvp in waitlisted_rsvps %}
+                                <tr>
+                                    <td class="fw-bold">{{ rsvp.user.full_name }}</td>
+                                    <td class="small text-muted">{{ rsvp.user.email }}</td>
+                                    <td class="text-warning fw-bold">#{{ forloop.counter }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }} — LPU BSC{% endblock %}
+
+{% block content %}
+<!-- EVENT HERO -->
+<div style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); padding: 3rem 0; position: relative; overflow: hidden;">
+    {% if event.banner %}
+    <div style="position:absolute;inset:0;background-image:url('{{ event.banner.url }}');background-size:cover;background-position:center;opacity:0.15;"></div>
+    {% endif %}
+    <div class="container position-relative">
+        <div class="row align-items-start">
+            <div class="col-lg-8">
+                <div class="d-flex gap-2 mb-3 flex-wrap">
+                    <span class="badge px-3 py-2" style="background:var(--gold);color:var(--green-dark);font-weight:700;">{{ event.get_category_display }}</span>
+                    <span class="badge px-3 py-2 badge-status-{{ event.status }}">{{ event.get_status_display }}</span>
+                    {% if event.is_free %}<span class="badge px-3 py-2" style="background:rgba(255,255,255,0.2);color:white;">Free Event</span>{% endif %}
+                </div>
+                <h1 style="font-family:'Playfair Display',serif;font-size:2.5rem;font-weight:900;color:white;line-height:1.2;">{{ event.title }}</h1>
+                <div class="d-flex gap-4 mt-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-2 text-white opacity-75">
+                        <i class="bi bi-calendar3"></i>
+                        <span>{{ event.event_date|date:"F d, Y" }} at {{ event.event_date|date:"g:i A" }}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 text-white opacity-75">
+                        <i class="bi bi-geo-alt"></i>
+                        <span>{{ event.venue }}</span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 text-white opacity-75 mt-2">
+                    <i class="bi bi-person"></i>
+                    <span>Organized by {{ event.organizer.full_name }}</span>
+                </div>
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <!-- REGISTRATION CARD -->
+                <div class="card shadow-lg" style="border-radius:16px!important;">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between mb-3">
+                            <div>
+                                <div class="fw-bold fs-5">{{ event.confirmed_count }} / {{ event.max_attendees }}</div>
+                                <div class="small text-muted">Registered</div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold fs-5 text-green">{{ event.remaining_seats }}</div>
+                                <div class="small text-muted">Seats Left</div>
+                            </div>
+                        </div>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" style="width:{% widthratio event.confirmed_count event.max_attendees 100 %}%"></div>
+                        </div>
+
+                        {% if user_rsvp %}
+                            {% if user_rsvp.status == 'confirmed' %}
+                            <div class="alert alert-success mb-3 py-2 small">
+                                <i class="bi bi-check-circle me-1"></i>You are registered for this event!
+                            </div>
+                            {% if user_ticket %}
+                            <a href="{% url 'ticket_detail' user_ticket.ticket_id %}" class="btn btn-primary w-100 mb-2">
+                                <i class="bi bi-ticket me-2"></i>View My Ticket
+                            </a>
+                            {% endif %}
+                            {% elif user_rsvp.status == 'waitlisted' %}
+                            <div class="alert alert-warning mb-3 py-2 small">
+                                <i class="bi bi-clock me-1"></i>You are on the waitlist.
+                            </div>
+                            {% endif %}
+                            <form method="post" action="{% url 'cancel_rsvp' user_rsvp.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100 btn-sm"
+                                    onclick="return confirm('Cancel your registration?')">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                                </button>
+                            </form>
+                        {% elif event.is_rsvp_open %}
+                            <a href="{% url 'rsvp_event' event.slug %}" class="btn btn-gold w-100 mb-2">
+                                {% if event.is_full %}
+                                <i class="bi bi-list-ul me-2"></i>Join Waitlist
+                                {% else %}
+                                <i class="bi bi-check2-circle me-2"></i>Register Now
+                                {% endif %}
+                            </a>
+                            {% if not user.is_authenticated %}
+                            <p class="text-center small text-muted">
+                                <a href="{% url 'login' %}?next={{ request.path }}">Login</a> to register
+                            </p>
+                            {% endif %}
+                        {% else %}
+                            <button class="btn btn-secondary w-100" disabled>
+                                <i class="bi bi-lock me-2"></i>Registration Closed
+                            </button>
+                        {% endif %}
+
+                        <div class="mt-3 pt-3 border-top small text-muted">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <i class="bi bi-clock"></i>
+                                <span>RSVP closes {{ event.rsvp_deadline|date:"M d" }} at {{ event.rsvp_deadline|date:"g:i A" }}</span>
+                            </div>
+                            {% if not event.is_free %}
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-cash"></i>
+                                <span>Entry fee: ₹{{ event.ticket_price }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if user.is_organizer and user == event.organizer or user.is_admin %}
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'edit_event' event.slug %}" class="btn btn-outline-light btn-sm flex-fill">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                    </a>
+                    <a href="{% url 'event_attendees' event.slug %}" class="btn btn-outline-light btn-sm flex-fill">
+                        <i class="bi bi-people me-1"></i>Attendees
+                    </a>
+                    <a href="{% url 'scan_qr' event.slug %}" class="btn btn-gold btn-sm flex-fill">
+                        <i class="bi bi-qr-code-scan me-1"></i>Scan
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- DESCRIPTION -->
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-info-circle me-2"></i>About This Event</div>
+                <div class="card-body p-4">
+                    <div style="line-height:1.8;white-space:pre-line;">{{ event.description }}</div>
+                </div>
+            </div>
+
+            {% if event.venue_details %}
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-geo-alt me-2"></i>Venue Details</div>
+                <div class="card-body p-4">
+                    <p class="mb-0">{{ event.venue_details }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if event.tags %}
+            <div class="mb-4">
+                <strong class="d-block mb-2">Tags</strong>
+                {% for tag in event.tags.split %}
+                <span class="badge me-1 mb-1" style="background:rgba(26,71,42,0.1);color:var(--green-mid);font-size:0.85rem;">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- GALLERY -->
+            {% if gallery %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-images me-2"></i>Event Gallery</span>
+                    {% if user.is_organizer and user == event.organizer or user.is_admin %}
+                    <a href="{% url 'add_gallery' event.slug %}" class="btn btn-sm btn-gold">
+                        <i class="bi bi-plus me-1"></i>Add Photos
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        {% for image in gallery %}
+                        <div class="col-md-4 col-6">
+                            <img src="{{ image.image.url }}" class="img-fluid rounded-xl w-100" style="height:180px;object-fit:cover;" alt="{{ image.caption }}">
+                            {% if image.caption %}<p class="small text-muted mt-1">{{ image.caption }}</p>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% elif event.status == 'completed' and user.is_organizer %}
+            <div class="card mb-4">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-images fs-1 text-muted opacity-50"></i>
+                    <p class="mt-2 text-muted">No gallery photos yet.</p>
+                    {% if user == event.organizer or user.is_admin %}
+                    <a href="{% url 'add_gallery' event.slug %}" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i>Upload Photos
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- EVENT DETAILS SIDEBAR -->
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-calendar-check me-2"></i>Event Details</div>
+                <div class="card-body p-0">
+                    <table class="table mb-0">
+                        <tr>
+                            <td class="text-muted small">Start</td>
+                            <td class="fw-bold small">{{ event.event_date|date:"M d, Y g:i A" }}</td>
+                        </tr>
+                        {% if event.end_date %}
+                        <tr>
+                            <td class="text-muted small">End</td>
+                            <td class="fw-bold small">{{ event.end_date|date:"M d, Y g:i A" }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td class="text-muted small">Venue</td>
+                            <td class="fw-bold small">{{ event.venue }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Category</td>
+                            <td class="fw-bold small">{{ event.get_category_display }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Capacity</td>
+                            <td class="fw-bold small">{{ event.max_attendees }} people</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted small">Price</td>
+                            <td class="fw-bold small">{% if event.is_free %}Free{% else %}₹{{ event.ticket_price }}{% endif %}</td>
+                        </tr>
+                        {% if event.status == 'completed' %}
+                        <tr>
+                            <td class="text-muted small">Attendance</td>
+                            <td class="fw-bold small">{{ event.attendance_percentage }}%</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+
+            <!-- ORGANIZER -->
+            <div class="card">
+                <div class="card-header"><i class="bi bi-person-badge me-2"></i>Organizer</div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if event.organizer.profile_picture %}
+                        <img src="{{ event.organizer.profile_picture.url }}" class="avatar" style="width:50px;height:50px;" alt="">
+                        {% else %}
+                        <div class="avatar avatar-placeholder" style="width:50px;height:50px;border-radius:50%;background:var(--green-mid);color:white;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;flex-shrink:0;">
+                            {{ event.organizer.full_name|first }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-bold">{{ event.organizer.full_name }}</div>
+                            <div class="small text-muted">{{ event.organizer.get_role_display }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

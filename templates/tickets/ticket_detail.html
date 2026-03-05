@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Ticket — {{ ticket.event.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container"><h1><i class="bi bi-ticket me-3"></i>Your Ticket</h1></div>
+</div>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="ticket-card">
+                <!-- Ticket Header -->
+                <div class="ticket-header">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="small opacity-60 mb-1">LPU BANGLADESH STUDENTS COMMUNITY</div>
+                            <h4 style="font-family:'Playfair Display',serif;font-weight:900;">{{ ticket.event.title }}</h4>
+                        </div>
+                        <span class="badge px-3 py-2 {% if ticket.status == 'active' %}bg-success{% elif ticket.status == 'used' %}bg-secondary{% else %}bg-danger{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Ticket Body -->
+                <div class="p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <div class="small text-muted">Ticket Holder</div>
+                            <div class="fw-bold">{{ ticket.user.full_name }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Ticket ID</div>
+                            <div class="fw-bold font-monospace small">{{ ticket.ticket_number }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i>Date</div>
+                            <div class="fw-bold small">{{ ticket.event.event_date|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-clock me-1"></i>Time</div>
+                            <div class="fw-bold small">{{ ticket.event.event_date|date:"g:i A" }}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i>Venue</div>
+                            <div class="fw-bold">{{ ticket.event.venue }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Dashed divider -->
+                    <div class="border-top border-dashed my-4 position-relative">
+                        <div style="position:absolute;left:-28px;top:-12px;width:24px;height:24px;background:var(--cream);border-radius:50%;border:1px solid var(--gray-200);"></div>
+                        <div style="position:absolute;right:-28px;top:-12px;width:24px;height:24px;background:var(--cream);border-radius:50%;border:1px solid var(--gray-200);"></div>
+                    </div>
+
+                    <!-- QR CODE -->
+                    <div class="text-center mb-4">
+                        {% if ticket.qr_code %}
+                        <img src="{{ ticket.qr_code.url }}" alt="QR Code" style="width:180px;height:180px;border:4px solid var(--green-dark);border-radius:12px;padding:8px;">
+                        {% else %}
+                        <div style="width:180px;height:180px;border:2px dashed var(--gray-200);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+                            <i class="bi bi-qr-code" style="font-size:4rem;color:var(--gray-200);"></i>
+                        </div>
+                        {% endif %}
+                        <p class="small text-muted mt-2">Present this QR code at the entrance</p>
+                        <div class="font-monospace small text-muted">{{ ticket.ticket_id }}</div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="{% url 'event_detail' ticket.event.slug %}" class="btn btn-outline-green">
+                            <i class="bi bi-info-circle me-1"></i>Event Details
+                        </a>
+                        <a href="{% url 'download_ticket' ticket.ticket_id %}" class="btn btn-gold">
+                            <i class="bi bi-download me-2"></i>Download PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

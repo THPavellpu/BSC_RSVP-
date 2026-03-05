@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — LPU BSC{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div><h1><i class="bi bi-bell me-3"></i>Notifications</h1></div>
+        <a href="{% url 'mark_all_read' %}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-check2-all me-1"></i>Mark All Read
+        </a>
+    </div>
+</div>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            {% if notifications %}
+            <div class="card">
+                <div class="card-body p-0">
+                    {% for notif in notifications %}
+                    <div class="d-flex gap-3 p-4 border-bottom {% if not notif.is_read %}bg-light{% endif %}">
+                        <div style="width:44px;height:44px;border-radius:50%;background:{% if not notif.is_read %}var(--green-mid){% else %}var(--gray-200){% endif %};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi bi-{% if notif.notification_type == 'rsvp_confirmed' %}check-circle{% elif notif.notification_type == 'ticket_generated' %}ticket{% elif notif.notification_type == 'event_reminder' %}clock{% elif notif.notification_type == 'event_updated' %}pencil{% else %}bell{% endif %} {% if not notif.is_read %}text-white{% else %}text-muted{% endif %}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold {% if not notif.is_read %}text-dark{% else %}text-muted{% endif %}">{{ notif.title }}</div>
+                            <div class="small text-muted">{{ notif.message }}</div>
+                            <div class="small text-muted mt-1 opacity-60">{{ notif.created_at|timesince }} ago</div>
+                        </div>
+                        {% if notif.link %}
+                        <div><a href="{{ notif.link }}" class="btn btn-sm btn-outline-green">View</a></div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state py-5 card">
+                <i class="bi bi-bell-slash d-block mb-3"></i>
+                <h5>No notifications yet</h5>
+                <p class="text-muted">We'll notify you when something important happens</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

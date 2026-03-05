@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Register for {{ event.title }} — LPU BSC{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="bi bi-check2-circle me-3"></i>Register for Event</h1>
+        <p class="opacity-75 mb-0">{{ event.title }}</p>
+    </div>
+</div>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- EVENT SUMMARY -->
+            <div class="card mb-4" style="border-left:4px solid var(--gold);">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold">{{ event.title }}</h5>
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-calendar3 me-1"></i>Date</div>
+                            <div class="fw-bold small">{{ event.event_date|date:"M d, Y" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-clock me-1"></i>Time</div>
+                            <div class="fw-bold small">{{ event.event_date|date:"g:i A" }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i>Venue</div>
+                            <div class="fw-bold small">{{ event.venue }}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted"><i class="bi bi-people me-1"></i>Seats Left</div>
+                            <div class="fw-bold small {% if event.remaining_seats < 10 %}text-danger{% else %}text-green{% endif %}">
+                                {{ event.remaining_seats }} seats
+                            </div>
+                        </div>
+                    </div>
+                    {% if event.is_full %}
+                    <div class="alert alert-warning mt-3 mb-0 py-2 small">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Event is full. You'll be added to the waiting list.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- REGISTRATION FORM -->
+            <div class="card">
+                <div class="card-header"><i class="bi bi-person-check me-2"></i>Confirm Registration</div>
+                <div class="card-body p-4">
+                    <div class="mb-3 p-3 rounded-xl" style="background:var(--gray-100);">
+                        <div class="small text-muted">Registering as</div>
+                        <div class="fw-bold">{{ user.full_name }}</div>
+                        <div class="small text-muted">{{ user.email }}</div>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label">Additional Information <span class="text-muted">(optional)</span></label>
+                            <textarea name="additional_info" class="form-control" rows="3"
+                                placeholder="Any special requirements or notes for the organizer..."></textarea>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <a href="{% url 'event_detail' event.slug %}" class="btn btn-outline-secondary flex-fill">Cancel</a>
+                            <button type="submit" class="btn btn-gold flex-fill fw-bold">
+                                {% if event.is_full %}
+                                <i class="bi bi-list-ul me-2"></i>Join Waitlist
+                                {% else %}
+                                <i class="bi bi-check2-circle me-2"></i>Confirm Registration
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
