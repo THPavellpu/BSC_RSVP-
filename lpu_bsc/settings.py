@@ -61,7 +61,7 @@ WSGI_APPLICATION = 'lpu_bsc.wsgi.application'
 
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL"),
+        default="sqlite:///db.sqlite3",
         conn_max_age=600
     )
 }
