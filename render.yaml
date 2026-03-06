@@ -1,0 +1,31 @@
+# Render deployment configuration
+# https://render.com/docs/yaml
+
+services:
+  - type: web
+    name: bsc-rsvp
+    env: python
+    plan: standard
+    buildCommand: >
+      pip install -r requirements.txt &&
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn lpu_bsc.wsgi:application --workers 4 --worker-class sync --timeout 60
+    healthCheckPath: /
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        scope: build
+      - key: DATABASE_URL
+        scope: build
+      - key: CLOUDINARY_CLOUD_NAME
+        scope: build
+      - key: CLOUDINARY_API_KEY
+        scope: build
+      - key: CLOUDINARY_API_SECRET
+        scope: build
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: EMAIL_PORT
+        value: "587"
