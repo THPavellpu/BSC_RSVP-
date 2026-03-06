@@ -8,7 +8,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('events.urls')),
     path('accounts/', include('accounts.urls')),
-    path('rsvp/', include('rsvp.urls')),
+    path('rsvp/', include(('rsvp.urls', 'rsvp'), namespace='rsvp')),
     path('tickets/', include('tickets.urls')),
     path('attendance/', include('attendance.urls')),
     path('notifications/', include('notifications.urls')),
