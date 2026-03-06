@@ -1,8 +1,13 @@
 import qrcode
 import os
 import io
+import logging
 from django.conf import settings
 from django.utils import timezone
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
+logger = logging.getLogger(__name__)
 
 
 def generate_qr_code(ticket):
@@ -18,13 +23,18 @@ def generate_qr_code(ticket):
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
-    # Save QR code
-    qr_dir = os.path.join(settings.MEDIA_ROOT, 'tickets', 'qr_codes')
-    os.makedirs(qr_dir, exist_ok=True)
+    # Save QR code using Django storage API (works with local and cloud storage)
     filename = f"ticket_{ticket.ticket_id}.png"
-    filepath = os.path.join(qr_dir, filename)
-    img.save(filepath)
-    return f"tickets/qr_codes/{filename}"
+    filepath = f"tickets/qr_codes/{filename}"
+    
+    # Convert PIL image to bytes
+    img_io = io.BytesIO()
+    img.save(img_io, format='PNG')
+    img_io.seek(0)
+    
+    # Save to storage
+    default_storage.save(filepath, ContentFile(img_io.getvalue()))
+    return filepath
 
 
 def generate_pdf_ticket(ticket):
@@ -37,12 +47,9 @@ def generate_pdf_ticket(ticket):
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
-        pdf_dir = os.path.join(settings.MEDIA_ROOT, 'tickets', 'pdfs')
-        os.makedirs(pdf_dir, exist_ok=True)
-        filename = f"ticket_{ticket.ticket_id}.pdf"
-        filepath = os.path.join(pdf_dir, filename)
-
-        doc = SimpleDocTemplate(filepath, pagesize=A4)
+        # Generate PDF to bytes
+        pdf_io = io.BytesIO()
+        doc = SimpleDocTemplate(pdf_io, pagesize=A4)
         styles = getSampleStyleSheet()
         story = []
 
@@ -62,18 +69,29 @@ def generate_pdf_ticket(ticket):
         story.append(Paragraph(f"<b>Status:</b> {ticket.get_status_display()}", body_style))
         story.append(Spacer(1, 1*cm))
 
-        # QR Code
+        # QR Code - include in PDF if available
         if ticket.qr_code:
-            qr_path = os.path.join(settings.MEDIA_ROOT, str(ticket.qr_code))
-            if os.path.exists(qr_path):
-                qr_img = Image(qr_path, width=5*cm, height=5*cm)
-                story.append(qr_img)
+            try:
+                # Try to get path for local storage
+                qr_path = default_storage.path(str(ticket.qr_code))
+                if os.path.exists(qr_path):
+                    qr_img = Image(qr_path, width=5*cm, height=5*cm)
+                    story.append(qr_img)
+            except (AttributeError, NotImplementedError):
+                # For cloud storage like Cloudinary, fallback to QR code text
+                pass
 
         story.append(Spacer(1, 0.5*cm))
         story.append(Paragraph("Present this ticket at the event entrance.", ParagraphStyle('Footer', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER)))
 
         doc.build(story)
-        return f"tickets/pdfs/{filename}"
+        pdf_io.seek(0)
+        
+        # Save PDF using Django storage API
+        filename = f"ticket_{ticket.ticket_id}.pdf"
+        filepath = f"tickets/pdfs/{filename}"
+        default_storage.save(filepath, ContentFile(pdf_io.getvalue()))
+        return filepath
     except ImportError:
         return None
 
@@ -85,6 +103,7 @@ def generate_ticket(user, event, rsvp=None):
     # Check if ticket already exists
     existing = Ticket.objects.filter(user=user, event=event).first()
     if existing:
+        logger.info(f"Ticket already exists for user {user.id} and event {event.id}")
         return existing
 
     ticket = Ticket.objects.create(
@@ -93,14 +112,16 @@ def generate_ticket(user, event, rsvp=None):
         rsvp=rsvp,
         status='active',
     )
+    logger.info(f"Created ticket {ticket.ticket_id} for user {user.id} and event {event.id}")
 
     # Generate QR code
     try:
         qr_path = generate_qr_code(ticket)
         ticket.qr_code = qr_path
         ticket.save()
+        logger.info(f"Successfully generated QR code for ticket {ticket.ticket_id}: {qr_path}")
     except Exception as e:
-        print(f"QR code generation error: {e}")
+        logger.error(f"QR code generation error for ticket {ticket.ticket_id}: {str(e)}", exc_info=True)
 
     # Generate PDF
     try:
@@ -108,7 +129,10 @@ def generate_ticket(user, event, rsvp=None):
         if pdf_path:
             ticket.pdf_ticket = pdf_path
             ticket.save()
+            logger.info(f"Successfully generated PDF for ticket {ticket.ticket_id}: {pdf_path}")
+        else:
+            logger.warning(f"PDF generation returned None for ticket {ticket.ticket_id}")
     except Exception as e:
-        print(f"PDF generation error: {e}")
+        logger.error(f"PDF generation error for ticket {ticket.ticket_id}: {str(e)}", exc_info=True)
 
     return ticket

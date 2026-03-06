@@ -3,12 +3,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+import logging
 
 from .models import RSVP
 from events.models import Event
 from tickets.utils import generate_ticket
 from tickets.models import Ticket
 from notifications.utils import notify_rsvp_confirmed
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -52,18 +55,19 @@ def rsvp_event(request, slug):
             if status == 'confirmed':
                 try:
                     ticket = generate_ticket(request.user, event, rsvp)
+                    logger.info(f"Ticket generated successfully for user {request.user.id} and event {event.id}")
 
                     # Send notification
                     try:
                         notify_rsvp_confirmed(request.user, event, ticket)
                     except Exception as e:
-                        print(f"Notification error: {e}")
+                        logger.error(f"Notification error for ticket {ticket.ticket_id}: {str(e)}", exc_info=True)
 
                     # Redirect to success page with ticket
                     return redirect('registration_success', ticket_id=str(ticket.ticket_id))
 
                 except Exception as e:
-                    print(f"Ticket generation error: {e}")
+                    logger.error(f"Ticket generation error for RSVP {rsvp.id}: {str(e)}", exc_info=True)
                     return redirect('registration_success_rsvp', rsvp_id=int(rsvp.id))
 
             # If waitlisted
