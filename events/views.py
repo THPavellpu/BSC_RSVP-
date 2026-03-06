@@ -77,6 +77,7 @@ def event_detail(request, slug):
         'gallery': gallery,
         'user_rsvp': user_rsvp,
         'user_ticket': user_ticket,
+        'now': timezone.now(),
     })
 
 
@@ -136,6 +137,11 @@ def add_gallery(request, slug):
     event = get_object_or_404(Event, slug=slug)
     if not request.user.is_admin and event.organizer != request.user:
         messages.error(request, 'Permission denied.')
+        return redirect('event_detail', slug=slug)
+    
+    # Check if event has ended
+    if timezone.now() < event.event_date:
+        messages.error(request, 'Photos can only be uploaded after the event date. Please try again after ' + event.event_date.strftime('%B %d, %Y'))
         return redirect('event_detail', slug=slug)
     
     if request.method == 'POST':

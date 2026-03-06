@@ -165,9 +165,15 @@
                             <i class="bi bi-fullscreen me-1"></i>View All
                         </a>
                         {% if user.is_organizer and user == event.organizer or user.is_admin %}
-                        <a href="{% url 'add_gallery' event.slug %}" class="btn btn-sm btn-gold">
-                            <i class="bi bi-plus me-1"></i>Add Photos
-                        </a>
+                            {% if now >= event.event_date %}
+                            <a href="{% url 'add_gallery' event.slug %}" class="btn btn-sm btn-gold">
+                                <i class="bi bi-plus me-1"></i>Add Photos
+                            </a>
+                            {% else %}
+                            <a href="#" class="btn btn-sm btn-secondary" disabled title="Photos can be added after the event">
+                                <i class="bi bi-clock me-1"></i>Add After Event
+                            </a>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -200,6 +206,17 @@
                     <a href="{% url 'add_gallery' event.slug %}" class="btn btn-primary">
                         <i class="bi bi-upload me-1"></i>Share Event Photos
                     </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif event.status == 'upcoming' and now < event.event_date %}
+            <div class="card mb-4">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-hourglass-split fs-1 text-warning"></i>
+                    <p class="mt-2 text-muted"><strong>Gallery Coming Soon!</strong></p>
+                    <p class="small text-muted">Photos can be uploaded after the event on {{ event.event_date|date:"F d, Y" }}</p>
+                    {% if user == event.organizer or user.is_admin %}
+                    <small class="text-muted d-block">You'll be able to upload photos once the event date passes.</small>
                     {% endif %}
                 </div>
             </div>
