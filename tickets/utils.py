@@ -23,19 +23,17 @@ def generate_qr_code(ticket):
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
-    # Save QR code using Django storage API (works with local and cloud storage)
+    # Save QR code to in-memory fil
     filename = f"ticket_{ticket.ticket_id}.png"
-    filepath = f"tickets/qr_codes/{filename}"
-    
-    # Convert PIL image to bytes
+
     img_io = io.BytesIO()
     img.save(img_io, format='PNG')
     img_io.seek(0)
-    
-    # Save to storage
-    default_storage.save(filepath, ContentFile(img_io.getvalue()))
-    return filepath
 
+    # Save through ImageField (important for Cloudinary)
+    ticket.qr_code.save(filename, ContentFile(img_io.getvalue()), save=True)
+
+    return ticket.qr_code.name
 
 def generate_pdf_ticket(ticket):
     """Generate a PDF ticket using ReportLab."""
@@ -116,10 +114,8 @@ def generate_ticket(user, event, rsvp=None):
 
     # Generate QR code
     try:
-        qr_path = generate_qr_code(ticket)
-        ticket.qr_code = qr_path
-        ticket.save()
-        logger.info(f"Successfully generated QR code for ticket {ticket.ticket_id}: {qr_path}")
+        generate_qr_code(ticket)
+        logger.info(f"Successfully generated QR code for ticket {ticket.ticket_id}")
     except Exception as e:
         logger.error(f"QR code generation error for ticket {ticket.ticket_id}: {str(e)}", exc_info=True)
 

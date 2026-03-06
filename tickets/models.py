@@ -18,7 +18,7 @@ class Ticket(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
     rsvp = models.OneToOneField(RSVP, on_delete=models.CASCADE, related_name='ticket', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    qr_code = models.ImageField(upload_to='tickets/qr_codes/', blank=True, null=True)
+    qr_code = models.ImageField(upload_to='tickets/qr_codes', blank=True, null=True)
     pdf_ticket = models.FileField(upload_to='tickets/pdfs/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
