@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils import timezone
 from django.db import transaction
 import logging
 
@@ -55,23 +54,42 @@ def rsvp_event(request, slug):
             if status == 'confirmed':
                 try:
                     ticket = generate_ticket(request.user, event, rsvp)
-                    logger.info(f"Ticket generated successfully for user {request.user.id} and event {event.id}")
 
-                    # Send notification
+                    logger.info(
+                        f"Ticket generated successfully for user {request.user.id} and event {event.id}"
+                    )
+
+                    # Send notification email
                     try:
                         notify_rsvp_confirmed(request.user, event, ticket)
                     except Exception as e:
-                        logger.error(f"Notification error for ticket {ticket.ticket_id}: {str(e)}", exc_info=True)
+                        logger.error(
+                            f"Notification error for ticket {ticket.ticket_id}: {str(e)}",
+                            exc_info=True
+                        )
 
                     # Redirect to success page with ticket
-                    return redirect('registration_success', ticket_id=str(ticket.ticket_id))
+                    return redirect(
+                        'rsvp:registration_success',
+                        ticket_id=str(ticket.ticket_id)
+                    )
 
                 except Exception as e:
-                    logger.error(f"Ticket generation error for RSVP {rsvp.id}: {str(e)}", exc_info=True)
-                    return redirect('registration_success_rsvp', rsvp_id=int(rsvp.id))
+                    logger.error(
+                        f"Ticket generation error for RSVP {rsvp.id}: {str(e)}",
+                        exc_info=True
+                    )
+
+                    return redirect(
+                        'rsvp:registration_success_rsvp',
+                        rsvp_id=int(rsvp.id)
+                    )
 
             # If waitlisted
-            return redirect('registration_success_rsvp', rsvp_id=int(rsvp.id))
+            return redirect(
+                'rsvp:registration_success_rsvp',
+                rsvp_id=int(rsvp.id)
+            )
 
     return render(request, 'rsvp/rsvp_form.html', {'event': event})
 
@@ -83,14 +101,22 @@ def registration_success(request, ticket_id=None, rsvp_id=None):
     ticket = None
     rsvp = None
 
-    # If ticket exists
+    # Case 1: Ticket exists
     if ticket_id:
-        ticket = get_object_or_404(Ticket, ticket_id=ticket_id, user=request.user)
+        ticket = get_object_or_404(
+            Ticket,
+            ticket_id=ticket_id,
+            user=request.user
+        )
         rsvp = ticket.rsvp
 
-    # If RSVP exists but maybe waitlisted
+    # Case 2: RSVP exists (waitlisted or fallback)
     if rsvp_id and not rsvp:
-        rsvp = get_object_or_404(RSVP, id=rsvp_id, user=request.user)
+        rsvp = get_object_or_404(
+            RSVP,
+            id=rsvp_id,
+            user=request.user
+        )
 
         if rsvp.status == 'confirmed':
             ticket = Ticket.objects.filter(
@@ -102,10 +128,14 @@ def registration_success(request, ticket_id=None, rsvp_id=None):
         messages.error(request, 'Registration not found.')
         return redirect('event_list')
 
-    return render(request, 'rsvp/registration_success.html', {
-        'ticket': ticket,
-        'rsvp': rsvp,
-    })
+    return render(
+        request,
+        'rsvp/registration_success.html',
+        {
+            'ticket': ticket,
+            'rsvp': rsvp,
+        }
+    )
 
 
 @login_required
@@ -116,7 +146,7 @@ def cancel_rsvp(request, rsvp_id):
 
     if request.method == 'POST':
 
-        # Cancel ticket
+        # Cancel user's ticket
         Ticket.objects.filter(
             user=request.user,
             event=event
@@ -135,8 +165,12 @@ def cancel_rsvp(request, rsvp_id):
             try:
                 ticket = generate_ticket(waitlisted.user, event, waitlisted)
                 notify_rsvp_confirmed(waitlisted.user, event, ticket)
+
             except Exception as e:
-                print(f"Waitlist promotion error: {e}")
+                logger.error(
+                    f"Waitlist promotion error: {str(e)}",
+                    exc_info=True
+                )
 
         rsvp.status = 'cancelled'
         rsvp.save()
@@ -148,4 +182,8 @@ def cancel_rsvp(request, rsvp_id):
 
         return redirect('profile')
 
-    return render(request, 'rsvp/cancel_rsvp.html', {'rsvp': rsvp})
+    return render(
+        request,
+        'rsvp/cancel_rsvp.html',
+        {'rsvp': rsvp}
+    )
