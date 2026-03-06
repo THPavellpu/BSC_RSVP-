@@ -81,16 +81,18 @@ DATABASES = {
     'default': dj_database_url.config(
         default='sqlite:///db.sqlite3',
         conn_max_age=600,
-        # Render PostgreSQL settings
-        ATOMIC_REQUESTS=True,
     )
 }
 
-# SSL mode for Render PostgreSQL
+# Add PostgreSQL SSL settings for Render
 if 'postgresql' in DATABASES['default']['ENGINE']:
     DATABASES['default']['OPTIONS'] = {
         'sslmode': 'require',
     }
+
+# Add atomic requests for production
+if not DEBUG:
+    DATABASES['default']['ATOMIC_REQUESTS'] = True
 
 # Cloudinary Configuration
 # Set credentials from environment variables on Render
@@ -134,6 +136,9 @@ CLOUDINARY_STORAGE = {
 }
 
 AUTH_USER_MODEL = 'accounts.User'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
