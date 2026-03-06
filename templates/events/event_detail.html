@@ -160,31 +160,45 @@
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-images me-2"></i>Event Gallery</span>
-                    {% if user.is_organizer and user == event.organizer or user.is_admin %}
-                    <a href="{% url 'add_gallery' event.slug %}" class="btn btn-sm btn-gold">
-                        <i class="bi bi-plus me-1"></i>Add Photos
-                    </a>
-                    {% endif %}
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'event_gallery' event.slug %}" class="btn btn-sm btn-outline-green">
+                            <i class="bi bi-fullscreen me-1"></i>View All
+                        </a>
+                        {% if user.is_organizer and user == event.organizer or user.is_admin %}
+                        <a href="{% url 'add_gallery' event.slug %}" class="btn btn-sm btn-gold">
+                            <i class="bi bi-plus me-1"></i>Add Photos
+                        </a>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
                         {% for image in gallery %}
                         <div class="col-md-4 col-6">
-                            <img src="{{ image.image.url }}" class="img-fluid rounded-xl w-100" style="height:180px;object-fit:cover;" alt="{{ image.caption }}">
-                            {% if image.caption %}<p class="small text-muted mt-1">{{ image.caption }}</p>{% endif %}
+                            <a href="{% url 'event_gallery' event.slug %}" title="{{ image.caption }}">
+                                <img src="{{ image.image.url }}" class="img-fluid rounded-xl w-100" style="height:180px;object-fit:cover;transition:transform 0.3s ease;cursor:pointer;" 
+                                     onmouseover="this.style.transform='scale(1.05)'" 
+                                     onmouseout="this.style.transform='scale(1)'">
+                            </a>
+                            {% if image.caption %}<p class="small text-muted mt-1">{{ image.caption|truncatewords:5 }}</p>{% endif %}
                         </div>
                         {% endfor %}
                     </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'event_gallery' event.slug %}" class="btn btn-sm btn-outline-green">
+                            <i class="bi bi-arrow-right me-1"></i>View Full Gallery ({{ event.gallery_images.all|length|add:"-12" }} more)
+                        </a>
+                    </div>
                 </div>
             </div>
-            {% elif event.status == 'completed' and user.is_organizer %}
+            {% elif event.status == 'completed' %}
             <div class="card mb-4">
                 <div class="card-body text-center p-4">
                     <i class="bi bi-images fs-1 text-muted opacity-50"></i>
                     <p class="mt-2 text-muted">No gallery photos yet.</p>
                     {% if user == event.organizer or user.is_admin %}
                     <a href="{% url 'add_gallery' event.slug %}" class="btn btn-primary">
-                        <i class="bi bi-upload me-1"></i>Upload Photos
+                        <i class="bi bi-upload me-1"></i>Share Event Photos
                     </a>
                     {% endif %}
                 </div>

@@ -41,6 +41,27 @@ class EventGalleryForm(forms.ModelForm):
         }
 
 
+class BulkEventGalleryForm(forms.Form):
+    """Form for uploading multiple gallery images at once"""
+    images = forms.FileField(
+        widget=forms.FileInput(attrs={
+            'accept': 'image/*',
+            'class': 'form-control',
+        }),
+        label='Select Photos',
+        help_text='You can select multiple photos at once (.jpg, .png, .gif, .webp up to 10MB each)',
+        required=False
+    )
+    caption = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Add a caption for all photos (optional)'
+        }),
+        required=False,
+        label='Caption for all photos'
+    )
+
+
 class EventSearchForm(forms.Form):
     q = forms.CharField(
         required=False,

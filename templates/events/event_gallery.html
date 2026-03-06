@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }} — Gallery | LPU BSC{% endblock %}
+
+{% block content %}
+<!-- PAGE HEADER -->
+<div style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); padding: 2rem 0;">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <a href="{% url 'event_detail' event.slug %}" class="text-white opacity-75 small text-decoration-none hover-text">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Event
+                </a>
+                <h1 style="font-family:'Playfair Display',serif;font-weight:900;color:white;margin:0.5rem 0 0 0;">
+                    {{ event.title }} Gallery
+                </h1>
+                <p class="text-white opacity-75 mb-0 small">
+                    <i class="bi bi-images me-1"></i>{{ total_images }} photo{{ total_images|pluralize }}
+                </p>
+            </div>
+            {% if is_organizer %}
+            <a href="{% url 'add_gallery' event.slug %}" class="btn btn-gold">
+                <i class="bi bi-cloud-upload me-2"></i>Upload Photos
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    {% if images %}
+        <!-- GALLERY GRID -->
+        <div class="row g-3 gallery-grid" id="gallery-container">
+            {% for image in images %}
+            <div class="col-md-4 col-6 gallery-item">
+                <div class="card shadow-sm h-100 overflow-hidden cursor-pointer position-relative group" 
+                     data-bs-toggle="modal" data-bs-target="#imageModal{{ image.id }}">
+                    <img src="{{ image.image.url }}" 
+                         alt="{{ image.caption }}" 
+                         class="img-fluid w-100" 
+                         style="height:200px;object-fit:cover;transition:transform 0.3s ease;">
+                    
+                    <!-- OVERLAY -->
+                    <div class="position-absolute inset-0 bg-dark opacity-0 d-flex align-items-center justify-content-center transition"
+                         style="transition: opacity 0.3s ease;">
+                        <div class="text-center text-white">
+                            {% if image.caption %}
+                            <p class="mb-2 small px-2">{{ image.caption|truncatewords:10 }}</p>
+                            {% endif %}
+                            <small class="text-white opacity-75">Uploaded {{ image.uploaded_at|timesince }} ago</small>
+                        </div>
+                    </div>
+
+                    <!-- ORGANIZER ACTIONS -->
+                    {% if is_organizer %}
+                    <div class="position-absolute top-0 end-0 p-2" style="z-index: 10;">
+                        <div class="btn-group-vertical btn-group-sm">
+                            <form method="post" action="{% url 'delete_gallery_image' image.id %}" 
+                                  style="display:inline;" 
+                                  onsubmit="return confirm('Delete this photo?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if image.caption %}
+                <p class="mt-2 small text-muted text-center mb-0">{{ image.caption }}</p>
+                {% endif %}
+                <p class="small text-muted text-center mb-0">By {{ image.uploaded_by.full_name|truncatewords:1 }}</p>
+            </div>
+
+            <!-- IMAGE MODAL -->
+            <div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-fullscreen">
+                    <div class="modal-content bg-dark">
+                        <div class="modal-header border-0">
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body d-flex align-items-center justify-content-center">
+                            <div class="text-center">
+                                <img src="{{ image.image.url }}" 
+                                     alt="{{ image.caption }}" 
+                                     class="img-fluid" 
+                                     style="max-height:90vh;max-width:100%;object-fit:contain;">
+                                <div class="mt-4 text-white">
+                                    {% if image.caption %}
+                                    <h5 class="mb-2">{{ image.caption }}</h5>
+                                    {% endif %}
+                                    <p class="text-white opacity-75 small">
+                                        <i class="bi bi-person me-1"></i>{{ image.uploaded_by.full_name }}<br>
+                                        <i class="bi bi-calendar me-1"></i>{{ image.uploaded_at|date:"M d, Y g:i A" }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- PAGINATION -->
+        {% if images.has_other_pages %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if images.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1"><i class="bi bi-chevron-double-left"></i></a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ images.previous_page_number }}"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-double-left"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                </li>
+                {% endif %}
+
+                {% for num in images.paginator.page_range %}
+                    {% if images.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > images.number|add:'-3' and num < images.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if images.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ images.next_page_number }}"><i class="bi bi-chevron-right"></i></a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ images.paginator.num_pages }}"><i class="bi bi-chevron-double-right"></i></a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="bi bi-chevron-double-right"></i></span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <!-- EMPTY STATE -->
+        <div class="empty-state py-5 text-center">
+            <i class="bi bi-images d-block mb-3" style="font-size:3rem;color:var(--gray-300);"></i>
+            <h4 class="text-muted mb-2">No Photos Yet</h4>
+            <p class="text-muted mb-4">
+                {% if event.status == 'completed' %}
+                    Check back soon! Event organizers will be uploading photos.
+                {% else %}
+                    Photos will appear here after the event.
+                {% endif %}
+            </p>
+            {% if is_organizer %}
+            <a href="{% url 'add_gallery' event.slug %}" class="btn btn-gold">
+                <i class="bi bi-cloud-upload me-2"></i>Be the First to Upload
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- EVENT INFO CARD -->
+    <div class="card mt-5 border-0 shadow-sm">
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h5 class="text-muted small mb-2">Event</h5>
+                        <p class="fw-bold mb-0">{{ event.title }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h5 class="text-muted small mb-2">Date</h5>
+                        <p class="fw-bold mb-0">{{ event.event_date|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <h5 class="text-muted small mb-2">Organizer</h5>
+                        <p class="fw-bold mb-0">{{ event.organizer.full_name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.gallery-grid {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.gallery-item .card {
+    transition: all 0.3s ease;
+}
+
+.gallery-item .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+}
+
+.gallery-item .card:hover img {
+    transform: scale(1.05);
+}
+
+.gallery-item .card:hover .position-absolute {
+    opacity: 0.8 !important;
+}
+
+.inset-0 {
+    inset: 0;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.transition {
+    transition: all 0.3s ease;
+}
+
+.hover-text:hover {
+    opacity: 1 !important;
+    transition: opacity 0.3s ease;
+}
+
+.btn-group-vertical {
+    gap: 2px;
+}
+
+.btn-group-vertical .btn {
+    border-radius: 4px;
+}
+</style>
+{% endblock %}

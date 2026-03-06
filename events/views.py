@@ -3,8 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from .models import Event, EventGallery
-from .forms import EventForm, EventGalleryForm, EventSearchForm
+from .forms import EventForm, EventGalleryForm, BulkEventGalleryForm, EventSearchForm
 from rsvp.models import RSVP
 
 
@@ -136,18 +137,91 @@ def add_gallery(request, slug):
     if not request.user.is_admin and event.organizer != request.user:
         messages.error(request, 'Permission denied.')
         return redirect('event_detail', slug=slug)
+    
     if request.method == 'POST':
-        form = EventGalleryForm(request.POST, request.FILES)
+        form = BulkEventGalleryForm(request.POST, request.FILES)
         if form.is_valid():
-            gallery_item = form.save(commit=False)
-            gallery_item.event = event
-            gallery_item.uploaded_by = request.user
-            gallery_item.save()
-            messages.success(request, 'Image added to gallery.')
-            return redirect('event_detail', slug=slug)
+            images = request.FILES.getlist('images')
+            caption = form.cleaned_data.get('caption', '')
+            
+            if not images:
+                messages.error(request, 'Please select at least one image.')
+                return redirect('add_gallery', slug=slug)
+            
+            uploaded_count = 0
+            for image in images:
+                try:
+                    gallery_item = EventGallery(
+                        event=event,
+                        image=image,
+                        caption=caption,
+                        uploaded_by=request.user
+                    )
+                    gallery_item.save()
+                    uploaded_count += 1
+                except Exception as e:
+                    messages.warning(request, f'Failed to upload {image.name}: {str(e)}')
+                    pass
+            
+            if uploaded_count > 0:
+                messages.success(request, f'Successfully uploaded {uploaded_count} photo(s) to gallery!')
+            return redirect('event_gallery', slug=slug)
     else:
-        form = EventGalleryForm()
-    return render(request, 'events/add_gallery.html', {'form': form, 'event': event})
+        form = BulkEventGalleryForm()
+    
+    return render(request, 'events/add_gallery.html', {
+        'form': form,
+        'event': event,
+        'is_bulk_upload': True
+    })
+
+
+def event_gallery(request, slug):
+    """Display full gallery for an event - public view"""
+    event = get_object_or_404(Event, slug=slug)
+    gallery_images = event.gallery_images.all().order_by('-uploaded_at')
+    
+    # Pagination
+    paginator = Paginator(gallery_images, 12)  # 12 images per page
+    page = request.GET.get('page', 1)
+    images_page = paginator.get_page(page)
+    
+    # Check if user is organizer
+    is_organizer = request.user.is_authenticated and (request.user == event.organizer or request.user.is_admin)
+    
+    return render(request, 'events/event_gallery.html', {
+        'event': event,
+        'images': images_page,
+        'is_organizer': is_organizer,
+        'total_images': gallery_images.count(),
+    })
+
+
+@login_required
+def delete_gallery_image(request, image_id):
+    """Delete a gallery image - organizers only"""
+    image = get_object_or_404(EventGallery, id=image_id)
+    event = image.event
+    
+    # Check permission
+    if not request.user.is_admin and event.organizer != request.user:
+        messages.error(request, 'Permission denied.')
+        return redirect('event_gallery', slug=event.slug)
+    
+    if request.method == 'POST':
+        try:
+            # Delete the image file from storage
+            if image.image:
+                from django.core.files.storage import default_storage
+                if default_storage.exists(str(image.image)):
+                    default_storage.delete(str(image.image))
+            
+            image.delete()
+            messages.success(request, 'Photo deleted successfully.')
+        except Exception as e:
+            messages.error(request, f'Error deleting photo: {str(e)}')
+    
+    return redirect('event_gallery', slug=event.slug)
 
 
 @login_required
