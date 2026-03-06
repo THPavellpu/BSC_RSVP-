@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import cloudinary
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,6 +26,9 @@ INSTALLED_APPS = [
     'tickets',
     'attendance',
     'notifications',
+
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -65,7 +69,11 @@ DATABASES = {
         conn_max_age=600
     )
 }
-
+cloudinary.config(
+    cloud_name = os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    api_key = os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret = os.environ.get("CLOUDINARY_API_SECRET"),
+)
 # For PostgreSQL (production), uncomment and configure:
 # DATABASES = {
 #     'default': {
@@ -97,7 +105,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
 
 AUTH_USER_MODEL = 'accounts.User'
 
