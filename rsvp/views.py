@@ -70,8 +70,8 @@ def rsvp_event(request, slug):
 
                     # Redirect to success page with ticket
                     return redirect(
-                        'rsvp:registration_success',
-                        ticket_id=str(ticket.ticket_id)
+                        'rsvp:registration_success_ticket',
+                        ticket_id=ticket.ticket_id
                     )
 
                 except Exception as e:
