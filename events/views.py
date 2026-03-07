@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.utils import timezone
 from .models import Event, EventGallery
 from .forms import EventForm, EventGalleryForm, BulkEventGalleryForm, EventSearchForm
 from rsvp.models import RSVP
