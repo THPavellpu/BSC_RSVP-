@@ -5,8 +5,12 @@
 <style>
 #qr-reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 16px; overflow: hidden; }
 #scan-result { transition: all 0.3s; }
-.checkin-success { background: #d1e7dd; border: 2px solid #0f5132; border-radius: 12px; padding: 1.5rem; }
-.checkin-error { background: #f8d7da; border: 2px solid #842029; border-radius: 12px; padding: 1.5rem; }
+.checkin-success { background: #d1e7dd; border: 2px solid #0f5132; border-radius: 12px; padding: 2rem 1.5rem; animation: slideIn 0.3s ease-out; }
+.checkin-error { background: #f8d7da; border: 2px solid #842029; border-radius: 12px; padding: 2rem 1.5rem; animation: slideIn 0.3s ease-out; }
+.checkin-pending { background: #e7d4f5; border: 2px solid #6c3fb2; border-radius: 12px; padding: 1.5rem; text-align: center; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+.proceed-btn { font-size: 1.1rem; padding: 0.75rem 1.5rem; font-weight: 600; }
+.user-info-large { font-size: 1.05rem; }
 </style>
 {% endblock %}
 
@@ -87,6 +91,22 @@
 <script>
 const eventId = "{{ event.id }}";
 const verifyUrl = "{% url 'verify_ticket' %}";
+let html5QrcodeScanner; // Declare globally
+
+// Sound notification for successful scan
+function playSuccessSound() {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = 800;
+    oscillator.type = 'sine';
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+}
 
 function onScanSuccess(decodedText, decodedResult) {
     // Stop scanning temporarily
@@ -97,31 +117,50 @@ function onScanSuccess(decodedText, decodedResult) {
         .then(data => {
             const el = document.getElementById('scan-result');
             if (data.success) {
+                // Play success sound
+                playSuccessSound();
                 el.innerHTML = `
                     <div class="checkin-success text-center">
-                        <div class="fs-1">✅</div>
-                        <h5 class="fw-bold text-success mt-2">${data.message}</h5>
-                        <div class="fw-bold fs-5">${data.user_name}</div>
-                        <div class="small text-muted">Ticket: ${data.ticket_number} · Checked in at ${data.check_in_time}</div>
+                        <div class="fs-1 mb-2">✅</div>
+                        <h5 class="fw-bold text-success mb-3">${data.message}</h5>
+                        <div class="user-info-large fw-bold mb-1">${data.user_name}</div>
+                        <div class="small text-muted mb-3">Ticket: ${data.ticket_number} · Checked in at ${data.check_in_time}</div>
+                        <button onclick="proceedNextScan()" class="btn btn-success proceed-btn">
+                            <i class="bi bi-arrow-right me-2"></i>Proceed to Next Attendee
+                        </button>
                     </div>`;
             } else {
                 el.innerHTML = `
                     <div class="checkin-error text-center">
-                        <div class="fs-1">❌</div>
-                        <h5 class="fw-bold text-danger mt-2">Check-in Failed</h5>
-                        <div>${data.message}</div>
+                        <div class="fs-1 mb-2">❌</div>
+                        <h5 class="fw-bold text-danger mb-2">Check-in Failed</h5>
+                        <div class="mb-3">${data.message}</div>
+                        <button onclick="proceedNextScan()" class="btn btn-danger proceed-btn">
+                            <i class="bi bi-arrow-right me-2"></i>Scan Next QR Code
+                        </button>
                     </div>`;
             }
-            // Resume scanning after 3 seconds
-            setTimeout(() => {
-                el.innerHTML = '';
-                html5QrcodeScanner.resume();
-            }, 3000);
         })
         .catch(err => {
             console.error(err);
-            html5QrcodeScanner.resume();
+            const el = document.getElementById('scan-result');
+            el.innerHTML = `
+                <div class="checkin-error text-center">
+                    <div class="fs-1 mb-2">⚠️</div>
+                    <h5 class="fw-bold text-danger mb-2">Scan Error</h5>
+                    <div class="mb-3">An error occurred while processing the QR code. Please try again.</div>
+                    <button onclick="proceedNextScan()" class="btn btn-danger proceed-btn">
+                        <i class="bi bi-arrow-right me-2"></i>Scan Next QR Code
+                    </button>
+                </div>`;
         });
+}
+
+function proceedNextScan() {
+    // Clear result display
+    document.getElementById('scan-result').innerHTML = '';
+    // Resume scanning
+    html5QrcodeScanner.resume();
 }
 
 const html5QrcodeScanner = new Html5QrcodeScanner(

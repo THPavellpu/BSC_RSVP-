@@ -27,9 +27,6 @@
                     {% endif %}
                     <div class="d-flex gap-2">
                         <a href="{% url 'ticket_detail' ticket.ticket_id %}" class="btn btn-outline-green btn-sm flex-fill">View</a>
-                        <a href="{% url 'download_ticket' ticket.ticket_id %}" class="btn btn-gold btn-sm flex-fill">
-                            <i class="bi bi-download me-1"></i>PDF
-                        </a>
                     </div>
                 </div>
             </div>
