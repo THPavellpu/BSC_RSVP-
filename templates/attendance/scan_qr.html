@@ -163,9 +163,30 @@ function proceedNextScan() {
     html5QrcodeScanner.resume();
 }
 
-const html5QrcodeScanner = new Html5QrcodeScanner(
-    "qr-reader", { fps: 10, qrbox: { width: 300, height: 300 } }, false
+function onScanError(errorMessage) {
+    // This function is called when there's an error during scanning (not a failed scan, but an actual error)
+    console.warn(`QR Code scanning error: ${errorMessage}`);
+}
+
+html5QrcodeScanner = new Html5QrcodeScanner(
+    "qr-reader", 
+    { fps: 10, qrbox: { width: 300, height: 300 } }, 
+    /* verbose= */ false
 );
-html5QrcodeScanner.render(onScanSuccess);
+
+html5QrcodeScanner.render(onScanSuccess, onScanError)
+    .catch(err => {
+        console.error("Failed to initialize QR scanner:", err);
+        document.getElementById('qr-reader').innerHTML = `
+            <div style="padding: 2rem; text-align: center; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px;">
+                <h5 class="text-warning">Cannot access camera</h5>
+                <p class="mb-0">Please ensure:</p>
+                <ul class="text-start small" style="display: inline-block;">
+                    <li>Camera permissions are enabled</li>
+                    <li>Using HTTPS (required for camera access)</li>
+                    <li>No other app is using the camera</li>
+                </ul>
+            </div>`;
+    });
 </script>
 {% endblock %}
