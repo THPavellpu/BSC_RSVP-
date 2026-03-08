@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     'cloudinary',
     'cloudinary_storage',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -179,6 +180,15 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
+}
 
 # Logging Configuration
 LOGGING = {
