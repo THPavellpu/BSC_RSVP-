@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'tickets',
     'attendance',
     'notifications',
+    'api',
 
     'cloudinary',
     'cloudinary_storage',
