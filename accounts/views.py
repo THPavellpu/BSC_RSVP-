@@ -1,9 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordResetDoneView
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.models import User as DjangoUser
 from django.contrib import messages
 from django.db.models import Count
-from .forms import UserRegistrationForm, LoginForm, UserProfileForm
+from django.urls import reverse_lazy
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from .forms import UserRegistrationForm, LoginForm, UserProfileForm, PasswordResetEmailForm, CustomPasswordSetForm
 from .models import User
 from events.models import Event
 from rsvp.models import RSVP
@@ -134,3 +140,34 @@ def organizer_dashboard(request):
         'total_attendances': total_attendances,
         'all_events': events,
     })
+
+
+# Password Reset Views
+class CustomPasswordResetView(PasswordResetView):
+    form_class = PasswordResetEmailForm
+    template_name = 'accounts/password_reset.html'
+    email_template_name = 'accounts/password_reset_email.html'
+    html_email_template_name = 'accounts/password_reset_email.html'
+    success_url = reverse_lazy('password-reset-done')
+    
+    def form_valid(self, form):
+        messages.info(self, 'If an account with that email exists, you will receive a password reset link shortly.')
+        return super().form_valid(form)
+
+
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'accounts/password_reset_done.html'
+
+
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    form_class = CustomPasswordSetForm
+    template_name = 'accounts/password_reset_confirm.html'
+    success_url = reverse_lazy('password-reset-complete')
+    
+    def form_valid(self, form):
+        messages.success(self, 'Your password has been reset successfully! You can now log in with your new password.')
+        return super().form_valid(form)
+
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'accounts/password_reset_complete.html'

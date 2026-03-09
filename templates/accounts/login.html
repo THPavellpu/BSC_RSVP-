@@ -20,9 +20,14 @@
                                 <label class="form-label">Email Address</label>
                                 {{ form.username }}
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-2">
                                 <label class="form-label">Password</label>
                                 {{ form.password }}
+                            </div>
+                            <div class="mb-4 text-end">
+                                <a href="{% url 'password-reset' %}" class="small text-green text-decoration-none fw-bold">
+                                    Forgot Password?
+                                </a>
                             </div>
                             {% if form.errors %}
                             <div class="alert alert-danger py-2 small">Invalid email or password.</div>
