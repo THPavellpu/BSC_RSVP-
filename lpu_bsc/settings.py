@@ -154,6 +154,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@lpubsc.com')
+EMAIL_TIMEOUT = 10
 
 SITE_NAME = 'LPU Bangladesh Students Community'
 SITE_SHORT_NAME = 'LPU BSC'
