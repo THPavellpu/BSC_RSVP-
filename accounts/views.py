@@ -151,7 +151,7 @@ class CustomPasswordResetView(PasswordResetView):
     success_url = reverse_lazy('password-reset-done')
     
     def form_valid(self, form):
-        messages.info(self, 'If an account with that email exists, you will receive a password reset link shortly.')
+        messages.info(self.request, 'If an account with that email exists, you will receive a password reset link shortly.')
         return super().form_valid(form)
 
 
@@ -165,7 +165,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     success_url = reverse_lazy('password-reset-complete')
     
     def form_valid(self, form):
-        messages.success(self, 'Your password has been reset successfully! You can now log in with your new password.')
+        messages.success(self.request, 'Your password has been reset successfully! You can now log in with your new password.')
         return super().form_valid(form)
 
 
